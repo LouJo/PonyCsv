@@ -101,26 +101,23 @@ class CsvReader
 
   fun ref _parse_line(line : String ref) : Array[String] iso^ =>
     let result = recover Array[String] end
-    var previous : String = ""
+    var previous : String val = ""
+
     for value in line.split_by(_delim).values() do
       if previous.size() > 0 then
         if _is_end_quote(value) then
           previous = previous + value.trim(0, value.size() - 1)
-          result.push(previous)
+          result.push(_unescape_quotes(previous))
           previous = ""
         else
           previous = previous + value
         end
       else 
-        try
-          if (value(0)? == '"') then
-            if _is_end_quote(value) then
-              result.push(value.trim(1, value.size() - 1))
-            else
-              previous = value.trim(1)
-            end
+        if _is_begin_quote(value) then
+          if _is_end_quote(value) then
+            result.push(_unescape_quotes(value.trim(1, value.size() - 1)))
           else
-            result.push(value)
+            previous = value.trim(1)
           end
         else
           result.push(value)
@@ -129,7 +126,23 @@ class CsvReader
     end
     consume result
 
-  fun _is_end_quote(value : String val) : Bool =>
+  fun _unescape_quotes(value : String box) : String iso^ =>
+    """ Replace '""' with '"' in a string """
+    recover
+      let result : String ref = value.clone()
+      result.replace("\"\"", "\"")
+      result
+    end
+
+  fun _is_begin_quote(value : String box) : Bool =>
+    try
+      if value(0)? == '"' then true else false end
+    else
+      false
+    end
+
+  fun _is_end_quote(value : String box) : Bool =>
+    """ Return true if string ends with '"' but not with '""' """
     try
       if value(value.size() - 1)? != '"' then return false end
     else

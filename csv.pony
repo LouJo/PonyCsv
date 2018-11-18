@@ -2,7 +2,7 @@ use "files"
 
 
 trait Reader
-  fun ref lines(): Iterator[String]
+  fun ref lines(): Iterator[String] ref
 
 
 class FileReader is Reader
@@ -11,7 +11,7 @@ class FileReader is Reader
   new create(file: File) =>
     _file = file
 
-  fun ref lines() : Iterator[String] =>
+  fun ref lines() : Iterator[String] ref =>
     _file.seek_start(0)
     FileLines(_file)
 
@@ -32,13 +32,14 @@ class BytesReader is (Reader & Iterator[String])
   fun has_next() : Bool =>
     _position < _bytes.size()
 
-  fun ref next() : String =>
+  fun ref next() : String ? =>
+    if _position >= _bytes.size() then error end
     let pos1 = _position
     let pos2 = _next_new_line()
     _position = pos2 + 1
     String.from_array(_bytes.trim(pos1, pos2))
 
-  fun ref lines(): Iterator[String] =>
+  fun ref lines(): Iterator[String] ref =>
     _position = 0
     this
 
@@ -54,22 +55,92 @@ class BytesReader is (Reader & Iterator[String])
 
 class CsvReader
   var _reader : Reader
+  var _has_title : Bool = false
+  var _title : Array[String] val = []
+  var _delim : String = ";"
 
-  new readFile(filePath: FilePath) ? =>
+  new fromFile(
+    filePath: FilePath,
+    with_title : Bool = false,
+    delim : String = ";") ?
+  =>
+    _has_title = with_title
+    _delim = delim
     match OpenFile(filePath)
     | let file: File =>
       _reader = FileReader(file)
     else
       error
     end
+    _init()?
 
-  new readBytes(data: Array[U8 val] val) =>
+  new fromBytes(
+    data: ByteSeq,
+    with_title : Bool = false,
+    delim : String = ";") ?
+  =>
+    _has_title = with_title
+    _delim = delim
     _reader = BytesReader(data)
+    _init()?
+
+  fun title() : Array[String] val =>
+    _title
 
   fun ref dump(out: OutStream) =>
     for line in _reader.lines() do
       out.print("#" + line + "#")
     end
+
+  fun ref _init()? =>
+    if _has_title then _read_title()? end
+
+  fun ref _read_title()? =>
+    let line = _reader.lines().next()?
+    _title = line.split_by(_delim)
+
+  fun ref _parse_line(line : String ref) : Array[String] iso^ =>
+    let result = recover Array[String] end
+    var previous : String = ""
+    for value in line.split_by(_delim).values() do
+      if previous.size() > 0 then
+        if _is_end_quote(value) then
+          previous = previous + value.trim(0, value.size() - 1)
+          result.push(previous)
+          previous = ""
+        else
+          previous = previous + value
+        end
+      else 
+        try
+          if (value(0)? == '"') then
+            if _is_end_quote(value) then
+              result.push(value.trim(1, value.size() - 1))
+            else
+              previous = value.trim(1)
+            end
+          else
+            result.push(value)
+          end
+        else
+          result.push(value)
+        end
+      end
+    end
+    consume result
+
+  fun _is_end_quote(value : String val) : Bool =>
+    try
+      if value(value.size() - 1)? != '"' then return false end
+    else
+      return false
+    end
+    try
+      if value(value.size() - 2)? == '"' then return false end
+    else
+      return true
+    end
+    true
 
 
 actor Main
@@ -80,15 +151,20 @@ actor Main
       env.out.print("Read file " + fileName)
       let filePath = FilePath(env.root as AmbientAuth, fileName)?
       try
-        var reader = CsvReader.readFile(filePath)?
+        var reader = CsvReader.fromFile(filePath where with_title = true)?
         reader.dump(env.out)
+        for title in reader.title().values() do
+          env.out.print(title)
+        end
       else
         env.out.print("Cannot read file")
       end
 
-      let invar = "Maman\nBateaux"
-      var reader = CsvReader.readBytes(invar.array())
-      reader.dump(env.out)
+      try
+        let invar = "Maman\nBateaux"
+        var reader = CsvReader.fromBytes(invar.array())?
+       reader.dump(env.out)
+      end
     else
       env.out.print("Please provide a csv file as argument")
     end

@@ -72,38 +72,55 @@ class CsvReader
     else
       error
     end
-    _init()?
+    _init()
 
   new fromBytes(
     data: ByteSeq,
     with_title : Bool = false,
-    delim : String = ";") ?
+    delim : String = ";")
   =>
     _has_title = with_title
     _delim = delim
     _reader = BytesReader(data)
-    _init()?
+    _init()
 
   fun title() : Array[String] val =>
     _title
 
-  fun ref dump(out: OutStream) =>
-    for line in _reader.lines() do
-      out.print("#" + line + "#")
-    end
+  fun ref _init() =>
+    if _has_title then _read_title() end
 
-  fun ref _init()? =>
-    if _has_title then _read_title()? end
+  fun ref _read_title() =>
+    _title = CsvParser.parse_next_line(_reader.lines(), _delim)
 
-  fun ref _read_title()? =>
-    let line = _reader.lines().next()?
-    _title = line.split_by(_delim)
 
-  fun ref _parse_line(line : String ref) : Array[String] iso^ =>
+primitive CsvParser
+  fun parse_next_line(
+    lines : Iterator[String] ref,
+    delim : String val)
+    : Array[String] iso^
+  =>
+    var result = recover Array[String] end
+    var previous : String = ""
+    repeat 
+      try
+        (result,  previous) = _parse_line(lines.next()?, delim, previous)
+      else
+        break
+      end
+    until previous.size() == 0 end
+    consume result
+
+  fun _parse_line(
+	  line : String val,
+	  delim : String val,
+    prev : String val)
+	  : (Array[String] iso^, String val)
+  =>
     let result = recover Array[String] end
-    var previous : String val = ""
+    var previous = prev
 
-    for value in line.split_by(_delim).values() do
+    for value in line.split_by(delim).values() do
       if previous.size() > 0 then
         if _is_end_quote(value) then
           previous = previous + value.trim(0, value.size() - 1)
@@ -124,7 +141,7 @@ class CsvReader
         end
       end
     end
-    consume result
+    (consume result, previous)
 
   fun _unescape_quotes(value : String box) : String iso^ =>
     """ Replace '""' with '"' in a string """
@@ -165,7 +182,6 @@ actor Main
       let filePath = FilePath(env.root as AmbientAuth, fileName)?
       try
         var reader = CsvReader.fromFile(filePath where with_title = true)?
-        reader.dump(env.out)
         for title in reader.title().values() do
           env.out.print(title)
         end
@@ -173,11 +189,8 @@ actor Main
         env.out.print("Cannot read file")
       end
 
-      try
-        let invar = "Maman\nBateaux"
-        var reader = CsvReader.fromBytes(invar.array())?
-       reader.dump(env.out)
-      end
+      let invar = "Maman\nBateaux"
+      var reader = CsvReader.fromBytes(invar.array())
     else
       env.out.print("Please provide a csv file as argument")
     end

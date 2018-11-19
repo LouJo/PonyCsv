@@ -172,7 +172,7 @@ primitive CsvParser
     end
     true
 
-
+/*
 actor Main
   new create(env: Env) =>
     env.out.print("Pony CSV reader")
@@ -194,3 +194,4 @@ actor Main
     else
       env.out.print("Please provide a csv file as argument")
     end
+*/

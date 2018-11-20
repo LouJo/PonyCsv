@@ -1,4 +1,5 @@
 use "ponytest"
+use "package:.."
 
 actor Main is TestList
   new create(env : Env) =>

@@ -9,6 +9,8 @@ actor Main is TestList
 
   fun tag tests(test : PonyTest) =>
     test(_TestParseLineSimple)
+    test(_TestParseLineQuotes)
+    test(_TestParseMultiLineQuotes)
 
 
 primitive TestUtil
@@ -33,3 +35,26 @@ class iso _TestParseLineSimple is UnitTest
     let reader = CsvReader.fromBytes(input where with_title = true)
     let titles = reader.title()
     h.assert_true(TestUtil.fields_eq(titles, ["One"; "Line"; "Titles"])?)
+
+
+class iso _TestParseLineQuotes is UnitTest
+  fun name() : String => "Parse a line with quotes"
+
+  fun apply(h : TestHelper) ? =>
+    let input = "One;\"Line\";\"Titles \"\"more\"\" for us\""
+    let reader = CsvReader.fromBytes(input where with_title = true)
+    let titles = reader.title()
+    h.assert_true(TestUtil.fields_eq(titles,
+      ["One"; "Line"; "Titles \"more\" for us"])?)
+
+
+class iso _TestParseMultiLineQuotes is UnitTest
+  fun name() : String => "Parse a line with quotes on multi lines"
+
+  fun apply(h : TestHelper) ? =>
+    let input = "One;\"Line\nand one other\";\"Titles\nof books \"\"more\"\" for us\""
+    let reader = CsvReader.fromBytes(input where with_title = true)
+    let titles = reader.title()
+    for v in titles.values() do h.log(v) end
+    h.assert_true(TestUtil.fields_eq(titles,
+      ["One"; "Line\nand one other"; "Titles\nof books \"more\" for us"])?)

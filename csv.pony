@@ -104,7 +104,13 @@ primitive CsvParser
     var previous : String = ""
     repeat 
       try
-        (result,  previous) = _parse_line(lines.next()?, delim, previous)
+        (let res,  previous) = _parse_line(lines.next()?, delim, previous)
+        if (result.size() == 0) and (previous.size() == 0) then
+          result = consume res
+        else
+          let res_readable : Array[String] val = consume res
+          for v in res_readable.values() do result.push(v) end
+        end
       else
         break
       end
@@ -141,6 +147,7 @@ primitive CsvParser
         end
       end
     end
+    if previous.size() > 0 then previous = previous + "\n" end
     (consume result, previous)
 
   fun _unescape_quotes(value : String box) : String iso^ =>

@@ -35,11 +35,33 @@ class CsvReader
   fun title() : Array[String] val =>
     _title
 
+  fun ref lines() : Iterator[Array[String]] =>
+    let all_lines = _reader.lines()
+    if _has_title then try all_lines.next()? end end
+    CsvReaderLines(all_lines, _delim)
+
   fun ref _init() =>
     if _has_title then _read_title() end
 
   fun ref _read_title() =>
-    _title = _CsvParser.parse_next_line(_reader.lines(), _delim)
+    try
+      _title = _CsvParser.parse_next_line(_reader.lines(), _delim)?
+    end
+
+
+class CsvReaderLines is Iterator[Array[String]]
+  var _lines : Iterator[String] ref
+  var _delim : String
+
+  new create(lines : Iterator[String] ref, delim : String) =>
+    _lines = lines
+    _delim = delim
+
+  fun ref has_next() : Bool =>
+    _lines.has_next()
+
+  fun ref next() : Array[String] iso^ ? =>
+    _CsvParser.parse_next_line(_lines, _delim)?
 
 
 trait _Reader

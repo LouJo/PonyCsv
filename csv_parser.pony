@@ -3,21 +3,17 @@ primitive _CsvParser
   fun parse_next_line(
     lines : Iterator[String] ref,
     delim : String val)
-    : Array[String] iso^
+    : Array[String] iso^ ?
   =>
     var result = recover Array[String] end
     var previous : String = ""
     repeat 
-      try
-        (let res,  previous) = _parse_line(lines.next()?, delim, previous)
-        if (result.size() == 0) and (previous.size() == 0) then
-          result = consume res
-        else
-          let res_readable : Array[String] val = consume res
-          for v in res_readable.values() do result.push(v) end
-        end
+      (let res,  previous) = _parse_line(lines.next()?, delim, previous)
+      if (result.size() == 0) and (previous.size() == 0) then
+        result = consume res
       else
-        break
+        let res_readable : Array[String] val = consume res
+        for v in res_readable.values() do result.push(v) end
       end
     until previous.size() == 0 end
     consume result

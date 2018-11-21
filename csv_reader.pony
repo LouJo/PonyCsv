@@ -1,3 +1,4 @@
+use "collections/persistent"
 use "files"
 
 
@@ -40,6 +41,9 @@ class CsvReader
     if _has_title then try all_lines.next()? end end
     CsvReaderLines(all_lines, _delim)
 
+  fun ref linesMap() : Iterator[Map[String, String]] =>
+    CsvReaderLinesMap(lines(), _title)
+
   fun ref _init() =>
     if _has_title then _read_title() end
 
@@ -62,6 +66,30 @@ class CsvReaderLines is Iterator[Array[String]]
 
   fun ref next() : Array[String] iso^ ? =>
     _CsvParser.parse_next_line(_lines, _delim)?
+
+
+class CsvReaderLinesMap is Iterator[Map[String, String]]
+  var _linesReader : Iterator[Array[String]] ref
+  var _title : Array[String] val
+
+  new create(linesReader : Iterator[Array[String]] ref, title : Array[String] val) =>
+    _linesReader = linesReader
+    _title = title
+
+  fun ref has_next() : Bool =>
+    _linesReader.has_next()
+
+  fun ref next() : Map[String, String] val^ ? =>
+    let line = _linesReader.next()?
+    let lineValues = line.values()
+    let titleValues = _title.values()
+    recover
+      var result = Map[String, String]
+      while lineValues.has_next() and titleValues.has_next() do
+        result = result(titleValues.next()?) = lineValues.next()?
+      end
+      result
+    end
 
 
 trait _Reader

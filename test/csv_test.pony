@@ -1,5 +1,7 @@
+use "collections/persistent"
 use "ponytest"
 use "package:.."
+
 
 actor Main is TestList
   new create(env : Env) =>
@@ -14,6 +16,7 @@ actor Main is TestList
     test(_TestParseMultiLineQuotes)
     test(_TestLines)
     test(_TestLinesWithTitle)
+    test(_TestLinesMap)
 
 
 primitive TestUtil
@@ -37,6 +40,26 @@ primitive TestUtil
     let res = fields_eq(a, b)?
     h.log("compare: " + ";".join(a.values()) + " with " + ";".join(b.values()))
     h.assert_true(res)
+    h.log("compare ok")
+
+  fun assert_map_eq(
+    h : TestHelper,
+    a : Map[String, String] val,
+    b : Array[(String val, String val)] box) ?
+  =>
+    for k in a.keys() do
+      h.log("key found: " + k)
+    end
+    for (k, v) in b.values() do
+      try
+        let r = a(k)?
+        h.log("check " + k + " = " + v + " => " + r)
+        h.assert_true(r == v)
+      else
+        h.log("cannot get key " + k)
+        error
+      end
+    end
 
 
 class iso _TestParseLineSimple is UnitTest
@@ -90,6 +113,7 @@ line";" ""Bob"" is watching us";finally
       ["difficult\nline"; " \"Bob\" is watching us"; "finally"])?
     h.assert_true(lines.has_next() == false)
 
+
 class iso _TestLinesWithTitle is UnitTest
   fun name() : String => "Get several lines after title, as string array"
 
@@ -105,3 +129,22 @@ second line;like;first one
     TestUtil.assert_fields_eq(h, lines.next()?,
       ["second line"; "like"; "first one"])?
     h.assert_true(lines.has_next() == false)
+
+
+class iso _TestLinesMap is UnitTest
+  fun name() : String => "Get several lines as map"
+
+  fun apply(h : TestHelper) ? =>
+    let input = """
+name,address,city
+Joe,8 bob street,Paris
+Edith,"7 bis park ""Pony"" ",London
+"""
+    let csv = CsvReader.fromBytes(input where with_title = true, delim = ",")
+    TestUtil.assert_fields_eq(h, csv.title(), ["name"; "address"; "city"])?
+    let lines = csv.linesMap()
+    TestUtil.assert_map_eq(h, lines.next()?,
+      recover val [("name", "Joe"); ("address", "8 bob street"); ("city", "Paris")] end)?
+    TestUtil.assert_map_eq(h, lines.next()?,
+      recover val [("name", "Edith"); ("address", "7 bis park \"Pony\" "); ("city", "London")] end)?
+    h.assert_true(not lines.has_next())

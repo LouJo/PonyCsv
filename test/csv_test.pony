@@ -17,6 +17,8 @@ actor Main is TestList
     test(_TestLines)
     test(_TestLinesWithTitle)
     test(_TestLinesMap)
+    test(_TestAllLines)
+    test(_TestAllLinesMap)
 
 
 primitive TestUtil
@@ -148,3 +150,36 @@ Edith,"7 bis park ""Pony"" ",London
     TestUtil.assert_map_eq(h, lines.next()?,
       recover val [("name", "Edith"); ("address", "7 bis park \"Pony\" "); ("city", "London")] end)?
     h.assert_true(not lines.has_next())
+
+
+class iso _TestAllLines is UnitTest
+  fun name() : String => "Get all lines without title"
+
+  fun apply(h : TestHelper) ? =>
+    let input = """
+Beautiful:Forest:Hill
+Nice:Pony:Beast
+"""
+    let csv = CsvReader.from_bytes(input where with_title = false, delim = ":")
+    let all_lines = csv.all_lines()
+    h.assert_true(all_lines.size() == 2)
+    TestUtil.assert_fields_eq(h, all_lines(0)?, ["Beautiful"; "Forest"; "Hill"])?
+    TestUtil.assert_fields_eq(h, all_lines(1)?, ["Nice"; "Pony"; "Beast"])?
+
+
+class iso _TestAllLinesMap is UnitTest
+  fun name() : String => "Get all lines as maps"
+
+  fun apply(h : TestHelper) ? =>
+    let input = """
+name,address,city
+Joe,8 bob street,Paris
+Edith,"7 bis park ""Pony"" ",London
+"""
+    let csv = CsvReader.from_bytes(input where with_title = true, delim = ",")
+    let all_lines = csv.all_lines_map()
+
+    TestUtil.assert_map_eq(h, all_lines(0)?,
+      recover val [("name", "Joe"); ("address", "8 bob street"); ("city", "Paris")] end)?
+    TestUtil.assert_map_eq(h, all_lines(1)?,
+      recover val [("name", "Edith"); ("address", "7 bis park \"Pony\" "); ("city", "London")] end)?

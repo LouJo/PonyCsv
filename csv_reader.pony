@@ -36,13 +36,37 @@ class CsvReader
   fun title() : Array[String] val =>
     _title
 
-  fun ref lines() : Iterator[Array[String]] =>
-    let all_lines = _reader.lines()
-    if _has_title then try all_lines.next()? end end
-    CsvReaderLines(all_lines, _delim)
+  fun ref lines() : Iterator[Array[String] iso^] =>
+    let lines_it = _reader.lines()
+    if _has_title then try lines_it.next()? end end
+    CsvReaderLines(lines_it, _delim)
 
   fun ref lines_map() : Iterator[Map[String, String]] =>
     CsvReaderLinesMap(lines(), _title)
+
+  fun ref all_lines() : Array[Array[String] val] val =>
+    let lines_it = lines()
+    recover
+      var result = Array[Array[String] val]
+      while lines_it.has_next() do
+        try
+          result.push(lines_it.next()?)
+        end
+      end
+      result
+    end
+
+  fun ref all_lines_map() : Array[Map[String, String] val] val =>
+    let lines_it = lines_map()
+    recover
+      var result = Array[Map[String, String] val]
+      while lines_it.has_next() do
+        try
+          result.push(lines_it.next()?)
+        end
+      end
+      result
+    end
 
   fun ref _init() =>
     if _has_title then _read_title() end

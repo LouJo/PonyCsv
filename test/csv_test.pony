@@ -67,7 +67,7 @@ class iso _TestParseLineSimple is UnitTest
 
   fun apply(h : TestHelper) ? =>
     let input = "One;Line;Titles"
-    let reader = CsvReader.fromBytes(input where with_title = true)
+    let reader = CsvReader.from_bytes(input where with_title = true)
     let titles = reader.title()
     TestUtil.assert_fields_eq(h, titles, ["One"; "Line"; "Titles"])?
 
@@ -77,7 +77,7 @@ class iso _TestParseLineQuotes is UnitTest
 
   fun apply(h : TestHelper) ? =>
     let input = "One;\"Line\";\"Titles \"\"more\"\" for us\""
-    let reader = CsvReader.fromBytes(input where with_title = true)
+    let reader = CsvReader.from_bytes(input where with_title = true)
     let titles = reader.title()
     TestUtil.assert_fields_eq(h, titles,
       ["One"; "Line"; "Titles \"more\" for us"])?
@@ -88,7 +88,7 @@ class iso _TestParseMultiLineQuotes is UnitTest
 
   fun apply(h : TestHelper) ? =>
     let input = "One;\"Line\nand one other\";\"Titles\nof books \"\"more\"\" for us\""
-    let reader = CsvReader.fromBytes(input where with_title = true)
+    let reader = CsvReader.from_bytes(input where with_title = true)
     let titles = reader.title()
     TestUtil.assert_fields_eq(h, titles,
       ["One"; "Line\nand one other"; "Titles\nof books \"more\" for us"])?
@@ -104,7 +104,7 @@ second line;like;first one
 "difficult
 line";" ""Bob"" is watching us";finally
     """
-    let lines = CsvReader.fromBytes(input where with_title = false).lines()
+    let lines = CsvReader.from_bytes(input where with_title = false).lines()
     TestUtil.assert_fields_eq(h, lines.next()?,
       ["coucou"; "help me"; " twice"])?
     TestUtil.assert_fields_eq(h, lines.next()?,
@@ -123,7 +123,7 @@ one;title;line
 coucou;help me; twice
 second line;like;first one
     """
-    let lines = CsvReader.fromBytes(input where with_title = true).lines()
+    let lines = CsvReader.from_bytes(input where with_title = true).lines()
     TestUtil.assert_fields_eq(h, lines.next()?,
       ["coucou"; "help me"; " twice"])?
     TestUtil.assert_fields_eq(h, lines.next()?,
@@ -140,9 +140,9 @@ name,address,city
 Joe,8 bob street,Paris
 Edith,"7 bis park ""Pony"" ",London
 """
-    let csv = CsvReader.fromBytes(input where with_title = true, delim = ",")
+    let csv = CsvReader.from_bytes(input where with_title = true, delim = ",")
     TestUtil.assert_fields_eq(h, csv.title(), ["name"; "address"; "city"])?
-    let lines = csv.linesMap()
+    let lines = csv.lines_map()
     TestUtil.assert_map_eq(h, lines.next()?,
       recover val [("name", "Joe"); ("address", "8 bob street"); ("city", "Paris")] end)?
     TestUtil.assert_map_eq(h, lines.next()?,

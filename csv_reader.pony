@@ -8,14 +8,14 @@ class CsvReader
   var _title : Array[String] val = []
   var _delim : String = ";"
 
-  new fromFile(
-    filePath: FilePath,
+  new from_file(
+    file_path: FilePath,
     with_title : Bool = false,
     delim : String = ";") ?
   =>
     _has_title = with_title
     _delim = delim
-    match OpenFile(filePath)
+    match OpenFile(file_path)
     | let file: File =>
       _reader = _FileReader(file)
     else
@@ -23,7 +23,7 @@ class CsvReader
     end
     _init()
 
-  new fromBytes(
+  new from_bytes(
     data: ByteSeq,
     with_title : Bool = false,
     delim : String = ";")
@@ -41,7 +41,7 @@ class CsvReader
     if _has_title then try all_lines.next()? end end
     CsvReaderLines(all_lines, _delim)
 
-  fun ref linesMap() : Iterator[Map[String, String]] =>
+  fun ref lines_map() : Iterator[Map[String, String]] =>
     CsvReaderLinesMap(lines(), _title)
 
   fun ref _init() =>
@@ -69,24 +69,24 @@ class CsvReaderLines is Iterator[Array[String]]
 
 
 class CsvReaderLinesMap is Iterator[Map[String, String]]
-  var _linesReader : Iterator[Array[String]] ref
+  var _lines_reader : Iterator[Array[String]] ref
   var _title : Array[String] val
 
-  new create(linesReader : Iterator[Array[String]] ref, title : Array[String] val) =>
-    _linesReader = linesReader
+  new create(lines_reader : Iterator[Array[String]] ref, title : Array[String] val) =>
+    _lines_reader = lines_reader
     _title = title
 
   fun ref has_next() : Bool =>
-    _linesReader.has_next()
+    _lines_reader.has_next()
 
   fun ref next() : Map[String, String] val^ ? =>
-    let line = _linesReader.next()?
-    let lineValues = line.values()
-    let titleValues = _title.values()
+    let line = _lines_reader.next()?
+    let line_values = line.values()
+    let title_values = _title.values()
     recover
       var result = Map[String, String]
-      while lineValues.has_next() and titleValues.has_next() do
-        result = result(titleValues.next()?) = lineValues.next()?
+      while line_values.has_next() and title_values.has_next() do
+        result = result(title_values.next()?) = line_values.next()?
       end
       result
     end
@@ -103,9 +103,9 @@ actor Main
     try
       let fileName = env.args(1)?
       env.out.print("Read file " + fileName)
-      let filePath = FilePath(env.root as AmbientAuth, fileName)?
+      let file_path = FilePath(env.root as AmbientAuth, fileName)?
       try
-        var reader = CsvReader.fromFile(filePath where with_title = true)?
+        var reader = CsvReader.from_file(file_path where with_title = true)?
         for title in reader.title().values() do
           env.out.print(title)
         end
@@ -114,7 +114,7 @@ actor Main
       end
 
       let invar = "Maman\nBateaux"
-      var reader = CsvReader.fromBytes(invar.array())
+      var reader = CsvReader.from_bytes(invar.array())
     else
       env.out.print("Please provide a csv file as argument")
     end

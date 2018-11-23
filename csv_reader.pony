@@ -68,6 +68,58 @@ class CsvReader
       result
     end
 
+  fun ref column(index : USize) : Array[String] iso^ ? =>
+    let lines_it = lines()
+    recover
+      var result = Array[String]
+      while lines_it.has_next() do
+        result.push(lines_it.next()?(index)?)
+      end
+      result
+    end
+
+  fun ref all_columns() : Array[Array[String] val] iso^ ? =>
+    var cols = _all_columns_ref()?
+    recover
+      // convert Array[String] val to Array[String] ref elements
+      var result = Array[Array[String] val]
+      while cols.size() > 0 do
+        (let up, let others) = (consume cols).chop(1)
+        result.push((consume val up)(0)?)
+        cols = consume others
+      end
+      result
+    end
+
+  fun ref _all_columns_ref() : Array[Array[String] ref] iso^ ? =>
+    let lines_it = lines()
+    recover
+      var result = Array[Array[String] ref]
+      // First line of columns
+      if lines_it.has_next() then
+        let line = lines_it.next()?
+        let line_val = consume val line
+        for v in line_val.values() do
+          let new_col = Array[String]
+          new_col.push(v)
+          result.push(new_col)
+        end
+      end
+
+      // all lines
+      while lines_it.has_next() do
+        let line = lines_it.next()?
+        let line_val = consume val line
+        var col_index : USize = 0
+        for v in line_val.values() do
+          result(col_index)?.push(v)
+          col_index = col_index + 1
+        end
+      end
+
+      result
+    end
+
   fun ref _init() =>
     if _has_title then _read_title() end
 

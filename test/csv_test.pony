@@ -19,6 +19,8 @@ actor Main is TestList
     test(_TestLinesMap)
     test(_TestAllLines)
     test(_TestAllLinesMap)
+    test(_TestColumn)
+    test(_TestAllColumns)
 
 
 primitive TestUtil
@@ -183,3 +185,38 @@ Edith,"7 bis park ""Pony"" ",London
       recover val [("name", "Joe"); ("address", "8 bob street"); ("city", "Paris")] end)?
     TestUtil.assert_map_eq(h, all_lines(1)?,
       recover val [("name", "Edith"); ("address", "7 bis park \"Pony\" "); ("city", "London")] end)?
+
+
+class _TestColumn is UnitTest
+  fun name() : String => "Get one column"
+
+  fun apply(h : TestHelper) ? =>
+    let input = """
+name,address,city
+Joe,8 bob street,Paris
+Edith,"7 bis park ""Pony"" ",London
+"""
+    let csv = CsvReader.from_bytes(input where with_title = false, delim = ",")
+    let first_column = csv.column(0)?
+    TestUtil.assert_fields_eq(h, consume first_column, ["name"; "Joe"; "Edith"])?
+    let second_column = csv.column(1)?
+    TestUtil.assert_fields_eq(h, consume second_column, ["address"; "8 bob street"; "7 bis park \"Pony\" "])?
+    let third_column = csv.column(2)?
+    TestUtil.assert_fields_eq(h, consume third_column, ["city"; "Paris"; "London"])?
+
+
+class _TestAllColumns is UnitTest
+  fun name() : String => "Get all columns"
+
+  fun apply(h : TestHelper) ? =>
+    let input = """
+name,address,city
+Joe,8 bob street,Paris
+Edith,"7 bis park ""Pony"" ",London
+"""
+    let csv = CsvReader.from_bytes(input where with_title = false, delim = ",")
+    let cols = csv.all_columns()?
+
+    TestUtil.assert_fields_eq(h, cols(0)?, ["name"; "Joe"; "Edith"])?
+    TestUtil.assert_fields_eq(h, cols(1)?, ["address"; "8 bob street"; "7 bis park \"Pony\" "])?
+    TestUtil.assert_fields_eq(h, cols(2)?, ["city"; "Paris"; "London"])?

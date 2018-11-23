@@ -71,7 +71,7 @@ class iso _TestParseLineSimple is UnitTest
 
   fun apply(h : TestHelper) ? =>
     let input = "One;Line;Titles"
-    let reader = CsvReader.from_bytes(input where with_title = true)
+    let reader = CsvReader.from_bytes(input where with_title = true, delim = ";")
     let titles = reader.title()
     TestUtil.assert_fields_eq(h, titles, ["One"; "Line"; "Titles"])?
 
@@ -81,7 +81,7 @@ class iso _TestParseLineQuotes is UnitTest
 
   fun apply(h : TestHelper) ? =>
     let input = "One;\"Line\";\"Titles \"\"more\"\" for us\""
-    let reader = CsvReader.from_bytes(input where with_title = true)
+    let reader = CsvReader.from_bytes(input where with_title = true, delim = ";")
     let titles = reader.title()
     TestUtil.assert_fields_eq(h, titles,
       ["One"; "Line"; "Titles \"more\" for us"])?
@@ -92,7 +92,7 @@ class iso _TestParseMultiLineQuotes is UnitTest
 
   fun apply(h : TestHelper) ? =>
     let input = "One;\"Line\nand one other\";\"Titles\nof books \"\"more\"\" for us\""
-    let reader = CsvReader.from_bytes(input where with_title = true)
+    let reader = CsvReader.from_bytes(input where with_title = true, delim = ";")
     let titles = reader.title()
     TestUtil.assert_fields_eq(h, titles,
       ["One"; "Line\nand one other"; "Titles\nof books \"more\" for us"])?
@@ -108,7 +108,7 @@ second line;like;first one
 "difficult
 line";" ""Bob"" is watching us";finally
     """
-    let lines = CsvReader.from_bytes(input where with_title = false).lines()
+    let lines = CsvReader.from_bytes(input where with_title = false, delim = ";").lines()
     TestUtil.assert_fields_eq(h, lines.next()?,
       ["coucou"; "help me"; " twice"])?
     TestUtil.assert_fields_eq(h, lines.next()?,
@@ -127,7 +127,7 @@ one;title;line
 coucou;help me; twice
 second line;like;first one
     """
-    let lines = CsvReader.from_bytes(input where with_title = true).lines()
+    let lines = CsvReader.from_bytes(input where with_title = true, delim = ";").lines()
     TestUtil.assert_fields_eq(h, lines.next()?,
       ["coucou"; "help me"; " twice"])?
     TestUtil.assert_fields_eq(h, lines.next()?,

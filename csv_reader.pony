@@ -3,6 +3,10 @@ use "files"
 
 
 class CsvReader
+  """
+  Read and parse csv files with respect of RFC 4180
+  cf https://tools.ietf.org/html/rfc4180
+  """
   var _reader : _Reader
   var _has_title : Bool = false
   var _title : Array[String] val = []
@@ -11,8 +15,11 @@ class CsvReader
   new from_file(
     file_path: FilePath,
     with_title : Bool = false,
-    delim : String = ";") ?
+    delim : String = ",") ?
   =>
+    """
+    Create a csv reader from a file
+    """
     _has_title = with_title
     _delim = delim
     match OpenFile(file_path)
@@ -26,25 +33,48 @@ class CsvReader
   new from_bytes(
     data: ByteSeq,
     with_title : Bool = false,
-    delim : String = ";")
+    delim : String = ",")
   =>
+    """
+    Create a csv reader from an array of U8 or a string
+    """
     _has_title = with_title
     _delim = delim
     _reader = _BytesReader(data)
     _init()
 
   fun title() : Array[String] val =>
+    """
+    Get the first line as array of string
+    If reader was created with with_title = false, returned array will be empty
+    """
     _title
 
   fun ref lines() : Iterator[Array[String] iso^] =>
+    """
+    Return an iterator to all lines of csv data.
+    Data stream will be read gradually, as lines are read.
+    If reader was created with titles, the first line is skipped.
+    """
     let lines_it = _reader.lines()
     if _has_title then try lines_it.next()? end end
     CsvReaderLines(lines_it, _delim)
 
   fun ref lines_map() : Iterator[Map[String, String]] =>
+    """
+    Return an iterator to all lines.
+    Each line is a map of values with title as key.
+    Data stream will be read gradually, as lines are read.
+    If reader was created without titles, all line map will be empty.
+    """
     CsvReaderLinesMap(lines(), _title)
 
-  fun ref all_lines() : Array[Array[String] val] val =>
+  fun ref all_lines() : Array[Array[String] val] iso^ =>
+    """
+    Return all csv data as array of lines.
+    Data stream is all read at once.
+    If reader was created with titles, the first line is skipped.
+    """
     let lines_it = lines()
     recover
       var result = Array[Array[String] val]
@@ -56,7 +86,13 @@ class CsvReader
       result
     end
 
-  fun ref all_lines_map() : Array[Map[String, String] val] val =>
+  fun ref all_lines_map() : Array[Map[String, String] val] iso^ =>
+    """
+    Return all csv data as array of lines.
+    Each line is a map of values with title as key.
+    Data stream is all read at once.
+    If reader was created without titles, all line map will be empty.
+    """
     let lines_it = lines_map()
     recover
       var result = Array[Map[String, String] val]
@@ -69,6 +105,11 @@ class CsvReader
     end
 
   fun ref column(index : USize) : Array[String] iso^ ? =>
+    """
+    Return the column identified by index (from 0), as array of string values.
+    If reader was created with titles, the first line is skipped.
+    Everytime this function is called, all data stream is read.
+    """
     let lines_it = lines()
     recover
       var result = Array[String]
@@ -79,6 +120,11 @@ class CsvReader
     end
 
   fun ref all_columns() : Array[Array[String] val] iso^ ? =>
+    """
+    Return all csv data as array of columns.
+    Data stream is all read at once.
+    If reader was created with titles, the first line is skipped.
+    """
     var cols = _all_columns_ref()?
     recover
       // convert Array[String] val to Array[String] ref elements
@@ -148,7 +194,11 @@ class CsvReaderLinesMap is Iterator[Map[String, String]]
   var _lines_reader : Iterator[Array[String]] ref
   var _title : Array[String] val
 
-  new create(lines_reader : Iterator[Array[String]] ref, title : Array[String] val) =>
+  new create(
+    lines_reader : Iterator[Array[String]] ref,
+    title
+    : Array[String] val)
+  =>
     _lines_reader = lines_reader
     _title = title
 

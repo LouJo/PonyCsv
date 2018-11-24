@@ -67,15 +67,19 @@ primitive _CsvParser
     end
 
   fun _is_end_quote(value : String box) : Bool =>
-    """ Return true if string ends with '"' but not with '""' """
+    """
+    Return true if string ends with '"' but not with '""'
+    ie, count the number of '"' at the end of the string
+    """
+    var count : USize = 0
+    var index = value.size() - 1
     try
-      if value(value.size() - 1)? != '"' then return false end
+      while (index >= 0) do
+        let c = value(index)?
+        if c == '"' then count = count + 1 else break end
+        index = index - 1
+      end
+      return (count % 2) == 1
     else
       return false
     end
-    try
-      if value(value.size() - 2)? == '"' then return false end
-    else
-      return true
-    end
-    true

@@ -81,22 +81,22 @@ class iso _TestParseLineQuotes is UnitTest
   fun name() : String => "Parse a line with quotes"
 
   fun apply(h : TestHelper) ? =>
-    let input = "One;\"Line\";\"Titles \"\"more\"\" for us\""
+    let input = "One;\"Line\";\"Titles \"\"more\"\" for \"\"us\"\"\""
     let reader = CsvReader.from_bytes(input where with_title = true, delim = ";")
     let titles = reader.title()
     TestUtil.assert_fields_eq(h, titles,
-      ["One"; "Line"; "Titles \"more\" for us"])?
+      ["One"; "Line"; "Titles \"more\" for \"us\""])?
 
 
 class iso _TestParseMultiLineQuotes is UnitTest
   fun name() : String => "Parse a line with quotes on multi lines"
 
   fun apply(h : TestHelper) ? =>
-    let input = "One;\"Line\nand one other\";\"Titles\nof books \"\"more\"\" for us\""
+    let input = "One;\"Line\nand one other\";\"Titles\nof books \"\"more\"\" for \"\"us\"\"\""
     let reader = CsvReader.from_bytes(input where with_title = true, delim = ";")
     let titles = reader.title()
     TestUtil.assert_fields_eq(h, titles,
-      ["One"; "Line\nand one other"; "Titles\nof books \"more\" for us"])?
+      ["One"; "Line\nand one other"; "Titles\nof books \"more\" for \"us\""])?
 
 
 class iso _TestLines is UnitTest

@@ -1,4 +1,5 @@
 use "collections/persistent"
+use "itertools"
 use "files"
 
 
@@ -162,8 +163,7 @@ class CsvReader
       // First line of columns
       if lines_it.has_next() then
         let line = lines_it.next()?
-        let line_val = consume val line
-        for v in line_val.values() do
+        for v in (consume val line).values() do
           let new_col = Array[String]
           new_col.push(v)
           result.push(new_col)
@@ -172,12 +172,13 @@ class CsvReader
 
       // all lines
       while lines_it.has_next() do
-        let line = lines_it.next()?
-        let line_val = consume val line
-        var col_index : USize = 0
-        for v in line_val.values() do
-          result(col_index)?.push(v)
-          col_index = col_index + 1
+        try
+          let line = lines_it.next()?
+          var col_index : USize = 0
+          for v in (consume val line).values() do
+            result(col_index)?.push(v)
+            col_index = col_index + 1
+          end
         end
       end
 
@@ -240,26 +241,38 @@ trait _Reader
   fun ref lines(): Iterator[String] ref
 
 
-/*
+
 actor Main
   new create(env: Env) =>
-    env.out.print("Pony CSV reader")
+    env.out.print("Pony CSV reader test")
     try
       let fileName = env.args(1)?
       env.out.print("Read file " + fileName)
       let file_path = FilePath(env.root as AmbientAuth, fileName)?
       try
         var reader = CsvReader.from_file(file_path where with_title = true)?
-        for title in reader.title().values() do
-          env.out.print(title)
-        end
+
+        // Print titles
+        let titles = Iter[String](reader.title().values()).fold[String](
+          "", {(st, field) => if st.size() == 0 then field
+                              else st + " | " + field end})
+        env.out.print("Titles:")
+        env.out.print(titles)
+
+        // get all lines
+        //let lines = reader.all_lines()
+        //env.out.print(lines.size().string() + " lines")
+
+        // get all lines as map
+        //let lines = reader.all_lines_map()
+        //env.out.print(lines.size().string() + " lines")
+
+        // get all columns
+        let cols = reader._all_columns_ref()?
+        env.out.print(cols.size().string() + " columns")
       else
         env.out.print("Cannot read file")
       end
-
-      let invar = "Maman\nBateaux"
-      var reader = CsvReader.from_bytes(invar.array())
     else
       env.out.print("Please provide a csv file as argument")
     end
-*/

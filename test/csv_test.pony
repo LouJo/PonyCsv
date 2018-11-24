@@ -14,6 +14,7 @@ actor Main is TestList
     test(_TestParseLineSimple)
     test(_TestParseLineQuotes)
     test(_TestParseMultiLineQuotes)
+    test(_TestParseEmptyFields)
     test(_TestLines)
     test(_TestLinesWithTitle)
     test(_TestLinesMap)
@@ -97,6 +98,16 @@ class iso _TestParseMultiLineQuotes is UnitTest
     let titles = reader.title()
     TestUtil.assert_fields_eq(h, titles,
       ["One"; "Line\nand one other"; "Titles\nof books \"more\" for \"us\""])?
+
+
+class iso _TestParseEmptyFields is UnitTest
+  fun name() : String => "Parse empty fields"
+
+  fun apply(h :TestHelper) ? =>
+    let input = "Bob,\"\",,Leon,"
+    let reader = CsvReader.from_bytes(input where with_title = false, delim = ",")
+    let line = reader.lines().next()?
+    TestUtil.assert_fields_eq(h, consume line, ["Bob"; ""; ""; "Leon"; ""])?
 
 
 class iso _TestLines is UnitTest

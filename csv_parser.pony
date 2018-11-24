@@ -38,7 +38,7 @@ primitive _CsvParser
         end
       else 
         if _is_begin_quote(value) then
-          if _is_end_quote(value) then
+          if _is_end_quote(value) or (value == "\"\"") then
             result.push(_unescape_quotes(value.trim(1, value.size() - 1)))
           else
             previous = value.trim(1)

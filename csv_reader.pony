@@ -163,21 +163,17 @@ class CsvReader
       // First line of columns
       if lines_it.has_next() then
         let line = lines_it.next()?
-        for v in (consume val line).values() do
-          let new_col = Array[String]
-          new_col.push(v)
-          result.push(new_col)
-        end
+        Iter[String]((consume val line).values())
+          .map[Array[String]]({(t) => [t]})
+          .collect(result)
       end
 
       // all lines
       while lines_it.has_next() do
         try
           let line = lines_it.next()?
-          var col_index : USize = 0
-          for v in (consume val line).values() do
-            result(col_index)?.push(v)
-            col_index = col_index + 1
+          for (i, v) in Iter[String]((consume val line).values()).enum() do
+            result(i)?.push(v)
           end
         end
       end
@@ -239,7 +235,6 @@ class CsvReaderLinesMap is Iterator[Map[String, String]]
 
 trait _Reader
   fun ref lines(): Iterator[String] ref
-
 
 
 actor Main

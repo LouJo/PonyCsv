@@ -21,6 +21,7 @@ actor Main is TestList
     test(_TestAllLinesMap)
     test(_TestColumn)
     test(_TestAllColumns)
+    test(_TestAllColumnsMap)
 
 
 primitive TestUtil
@@ -220,3 +221,20 @@ Edith,"7 bis park ""Pony"" ",London
     TestUtil.assert_fields_eq(h, cols(0)?, ["name"; "Joe"; "Edith"])?
     TestUtil.assert_fields_eq(h, cols(1)?, ["address"; "8 bob street"; "7 bis park \"Pony\" "])?
     TestUtil.assert_fields_eq(h, cols(2)?, ["city"; "Paris"; "London"])?
+
+
+class _TestAllColumnsMap is UnitTest
+  fun name() : String => "Get all columns as maps"
+
+  fun apply(h : TestHelper) ? =>
+    let input = """
+name,address,city
+Joe,8 bob street,Paris
+Edith,"7 bis park ""Pony"" ",London
+"""
+    let csv = CsvReader.from_bytes(input where with_title = true, delim = ",")
+    let cols = csv.all_columns_map()?
+
+    TestUtil.assert_fields_eq(h, cols("name")?, ["Joe"; "Edith"])?
+    TestUtil.assert_fields_eq(h, cols("address")?, ["8 bob street"; "7 bis park \"Pony\" "])?
+    TestUtil.assert_fields_eq(h, cols("city")?, ["Paris"; "London"])?

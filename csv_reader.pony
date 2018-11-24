@@ -137,6 +137,24 @@ class CsvReader
       result
     end
 
+  fun ref all_columns_map() : Map[String, Array[String] val] val ? =>
+    """
+    Return all csv data as map of columns, with title as keys.
+    Data stream is all read at once.
+    """
+    let cols = all_columns()?
+    let cols_values = (consume cols).values()
+    let title_values = _title.values()
+    recover
+      var result = Map[String, Array[String] val]
+      while cols_values.has_next() and title_values.has_next() do
+        try
+          result = result(title_values.next()?) = cols_values.next()?
+        end
+      end
+      result
+    end
+
   fun ref _all_columns_ref() : Array[Array[String] ref] iso^ ? =>
     let lines_it = lines()
     recover

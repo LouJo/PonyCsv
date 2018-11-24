@@ -1,9 +1,9 @@
 # Pony CSV
-### CSV reader and parser for pony language
+### CSV reader and parser for Pony language
 
 Read and parse csv files with respect of RFC 4180 (https://tools.ietf.org/html/rfc4180)
 
-Created as a module for pony : https://www.ponylang.io/
+Created as a module for Pony : https://www.ponylang.io/
 
 ## Usage
 
@@ -27,6 +27,7 @@ Get csv lines with an iterator. File will be read gradually:
   var csv = CsvReader.from_file(file_path where with_title = false, delim=";")?
   let lines = csv.lines()
   for line in lines do
+    // ["name"; "birth"; "city"]
     // ["Bob"; "46", "Paris"]
     // ["Amandine"; "21", "London"]
     // ["Judith"; "63", "Amsterdam"]
@@ -51,7 +52,9 @@ Get all lines at once in an array:
   // [["Bob"; "46"; "Paris"]; ["Amandine"; "21"; "London"]; ["nJudith"; "63", "Amsterdam"]]
 ```
 
-Get the second column as array of values:
+Theres also a ```all_lines_map()``` to get all lines at once, as maps with titles as keys.
+
+Get the one column as array of values:
 ```pony
   var csv = CsvReader.from_file(file_path where with_title = false, delim=";")?
   var column = csv.column(1)?
@@ -62,7 +65,14 @@ Get all columns at once in an array:
 ```pony
   var csv = CsvReader.from_file(file_path where with_title = false, delim=";")?
   var all_cols = csv.all_columns()?
-  // [["Bob"; "Amandine"; "Judith"]; ["46"; "21"; "63"]; ["Paris"; "London"; "Amsterdam"]]
+  // [["name"; "Bob"; "Amandine"; "Judith"]; ["birth"; "46"; "21"; "63"]; ["city"; "Paris"; "London"; "Amsterdam"]]
 ```
 
-
+Get all columns at once, in a map of arrays:
+```pony
+  var csv = CsvReader.from_file(file_path where with_title = true, delim=";")?
+  var all_cols = csv.all_columns_map()?
+  // ("name"  => ["Bob"; "Amandine"; "Judith"];
+  //  "birth" => ["46"; "21"; "63"];
+  //  "city"  => ["Paris"; "London"; "Amsterdam"])
+```

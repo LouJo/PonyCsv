@@ -54,7 +54,7 @@ Get all lines at once in an array:
 
 Theres also a ```all_lines_map()``` to get all lines at once, as maps with titles as keys.
 
-Get the one column as array of values:
+Get one column as array of values:
 ```pony
   var csv = CsvReader.from_file(file_path where with_title = false, delim=";")?
   var column = csv.column(1)?
